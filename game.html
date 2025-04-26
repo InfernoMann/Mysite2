@@ -1,1 +1,198 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Футбол с ИИ</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #111;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
+        canvas {
+            border: 2px solid #fff;
+        }
+
+        #gameInfo {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameInfo"></div>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+
+        let playerScore = 0;
+        let aiScore = 0;
+        let round = 1;
+        let gameInterval;
+
+        const ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            radius: 10,
+            speedX: 5,
+            speedY: 5,
+            color: "#FFCC00"
+        };
+
+        const player = {
+            x: 20,
+            y: canvas.height / 2 - 50,
+            width: 20,
+            height: 100,
+            speed: 8,
+            color: "#00FF00"
+        };
+
+        const ai = {
+            x: canvas.width - 40,
+            y: canvas.height / 2 - 50,
+            width: 20,
+            height: 100,
+            speed: 5,
+            color: "#FF0000"
+        };
+
+        const keys = {
+            up: false,
+            down: false
+        };
+
+        // Обработчик ввода с клавиатуры
+        document.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowUp") keys.up = true;
+            if (e.key === "ArrowDown") keys.down = true;
+        });
+
+        document.addEventListener("keyup", (e) => {
+            if (e.key === "ArrowUp") keys.up = false;
+            if (e.key === "ArrowDown") keys.down = false;
+        });
+
+        // Отображение счета и раунда
+        function drawGameInfo() {
+            ctx.font = "24px Arial";
+            ctx.fillStyle = "#FFF";
+            ctx.fillText(`Раунд: ${round}`, 10, 30);
+            ctx.fillText(`Игрок: ${playerScore}`, 10, 60);
+            ctx.fillText(`ИИ: ${aiScore}`, canvas.width - 150, 60);
+        }
+
+        // Отрисовка объектов на поле
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Игровое поле
+            ctx.fillStyle = "#111";
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Мяч
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = ball.color;
+            ctx.fill();
+            ctx.closePath();
+            
+            // Игрок
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+            
+            // ИИ
+            ctx.fillStyle = ai.color;
+            ctx.fillRect(ai.x, ai.y, ai.width, ai.height);
+            
+            drawGameInfo();
+        }
+
+        // Логика игры (движение мяча и проверка столкновений)
+        function gameLogic() {
+            // Движение мяча
+            ball.x += ball.speedX;
+            ball.y += ball.speedY;
+            
+            if (ball.y - ball.radius < 0 || ball.y + ball.radius > canvas.height) {
+                ball.speedY = -ball.speedY;
+            }
+            
+            // Столкновение с игроком
+            if (ball.x - ball.radius < player.x + player.width &&
+                ball.y > player.y && ball.y < player.y + player.height) {
+                ball.speedX = -ball.speedX;
+            }
+            
+            // Столкновение с ИИ
+            if (ball.x + ball.radius > ai.x &&
+                ball.y > ai.y && ball.y < ai.y + ai.height) {
+                ball.speedX = -ball.speedX;
+            }
+            
+            // Гол игрока
+            if (ball.x - ball.radius < 0) {
+                aiScore++;
+                resetBall();
+                checkRound();
+            }
+            
+            // Гол ИИ
+            if (ball.x + ball.radius > canvas.width) {
+                playerScore++;
+                resetBall();
+                checkRound();
+            }
+            
+            // Движение игрока
+            if (keys.up && player.y > 0) player.y -= player.speed;
+            if (keys.down && player.y + player.height < canvas.height) player.y += player.speed;
+            
+            // Движение ИИ
+            if (ai.y + ai.height / 2 < ball.y) ai.y += ai.speed;
+            if (ai.y + ai.height / 2 > ball.y) ai.y -= ai.speed;
+        }
+
+        // Сброс мяча в центр после гола
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.speedX = -ball.speedX;
+            ball.speedY = (Math.random() < 0.5 ? 1 : -1) * 5;
+        }
+
+        // Проверка конца раунда
+        function checkRound() {
+            if (playerScore === 5 || aiScore === 5) {
+                alert(playerScore === 5 ? "Вы выиграли!" : "ИИ победил!");
+                round++;
+                playerScore = 0;
+                aiScore = 0;
+            }
+        }
+
+        // Инициализация игры
+        function startGame() {
+            gameInterval = setInterval(() => {
+                gameLogic();
+                draw();
+            }, 1000 / 60);
+        }
+
+        // Начало игры
+        startGame();
+    </script>
+</body>
+</html>
